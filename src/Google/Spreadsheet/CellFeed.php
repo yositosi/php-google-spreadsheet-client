@@ -45,16 +45,6 @@ class CellFeed
     }
 
     /**
-     * Get the cell feed xml
-     * 
-     * @return \SimpleXMLElement
-     */
-    public function getXml()
-    {
-        return $this->xml;
-    }
-
-    /**
      * Get the feed entries
      * 
      * @return array \Google\Spreadsheet\CellEntry

@@ -25,7 +25,8 @@ namespace Google\Spreadsheet;
  */
 interface ServiceRequestInterface
 {
-    public function __construct(Request $request);
-    public function getRequest();
-    public function execute();
+    //public function __construct(Request $request);
+    //public function getRequest();
+    public function get($url);
+    public function post($url, $postData);
 }

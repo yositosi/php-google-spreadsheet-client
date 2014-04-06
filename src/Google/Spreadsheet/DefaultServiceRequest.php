@@ -30,26 +30,132 @@ class DefaultServiceRequest implements ServiceRequestInterface
      * 
      * @var \Google\Spreadsheet\Request
      */
-    private $request;
+    private $accessToken;
+
+    /**
+     * Request headers
+     * 
+     * @var array
+     */
+    private $headers = array();
+
+    /**
+     * Service url
+     * 
+     * @var string
+     */
+    private $serviceUrl = 'https://spreadsheets.google.com/';
+
+    /**
+     * User agent
+     * 
+     * @var string
+     */
+    private $userAgent = 'PHP Google Spreadsheet Api';
 
     /**
      * Initializes the service request object.
      * 
      * @param \Google\Spreadsheet\Request $request
      */
-    public function __construct(Request $request)
+    public function __construct($accessToken)
     {
-        $this->request = $request;
+        $this->accessToken = $accessToken;
+    }
+
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+    
+    /**
+     * Set optional request headers. 
+     * 
+     * @param array $headers associative array of key value pairs
+     *
+     * @return Google\Spreadsheet\Request
+     */
+    public function setHeaders(array $headers)
+    {
+        $this->headers = $headers;
+        return $this;
     }
 
     /**
-     * Get the request object
+     * Get the user agent
      * 
-     * @return \Google\Spreadsheet\Request
+     * @return string
      */
-    public function getRequest()
+    public function getUserAgent()
     {
-        return $this->request;
+        return $this->userAgent;
+    }
+    
+    /**
+     * Set the user agent. It is a good ides to leave this as is.
+     * 
+     * @param string $userAgent
+     *
+     * @return Google\Spreadsheet\Request
+     */
+    public function setUserAgent($userAgent)
+    {
+        $this->userAgent = $userAgent;
+        return $this;
+    }
+
+    protected function initRequest($url, $requestHeaders = array())
+    {
+        $curlParams = array (
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => 0,
+            CURLOPT_FAILONERROR => false,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_VERBOSE => false,
+        );
+
+        if(substr($url, 0, 4) !== 'http') {
+            $url = $this->serviceUrl . $url;
+        }
+
+        $ch = curl_init();
+        curl_setopt_array($ch, $curlParams);
+        curl_setopt($ch, CURLOPT_URL, $url);
+
+        $headers = array();
+        if (count($this->getHeaders()) > 0) {
+            foreach ($this->getHeaders() as $k => $v) {
+                $headers[] = "$k: $v";
+            }
+        }
+        $headers[] = "Authorization: OAuth " . $this->accessToken;
+        $headers = array_merge($headers, $requestHeaders);
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_USERAGENT, $this->getUserAgent());
+        return $ch;       
+    }
+
+    public function get($url)
+    {
+        $ch = $this->initRequest($url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        return $this->execute($ch);
+    }
+
+    public function post($url, $postData)
+    {
+        $ch = $this->initRequest($url, array('Content-Type: application/atom+xml'));
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        return $this->execute($ch);
+    }
+
+    public function delete($url)
+    {
+        $ch = $this->initRequest($url);
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+        return $this->execute($ch);
     }
 
     /**
@@ -61,46 +167,20 @@ class DefaultServiceRequest implements ServiceRequestInterface
      *                                       Will throw an exception if the response
      *                                       code is 300 or greater
      */
-    public function execute()
+    protected function execute($ch)
     {
-        $curlParams = array (
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => 0,
-            CURLOPT_FAILONERROR => false,
-            CURLOPT_SSL_VERIFYPEER => true,
-            CURLOPT_VERBOSE => false,
-        );
 
-        $ch = curl_init();
-        curl_setopt_array($ch, $curlParams);
-        curl_setopt($ch, CURLOPT_URL, $this->request->getUrl());
-
-        if ($this->request->getMethod() === 'POST' || $this->request->getMethod() === 'PUT') {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $this->request->getPost());
-        }
-
-        $headers = array();
-        if (count($this->request->getHeaders()) > 0) {
-            foreach ($this->request->getHeaders() as $k => $v) {
-                $headers[] = "$k: $v";
-            }
-        }
-        $headers[] = "Authorization: OAuth " . $this->request->getAccessToken();
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->request->getMethod());
-        curl_setopt($ch, CURLOPT_USERAGENT, $this->request->getUserAgent());
         $ret = curl_exec($ch);
 
         $info = curl_getinfo($ch);
         if((int)$info['http_code'] > 299) {
             $exception = new Exception('Error in Google Request: '. $ret, $info['http_code']);
-            $exception->setRequest($this->request);
-            $this->resetRequestParams();
+            //$exception->setRequest($this->request);
+            //$this->resetRequestParams();
             throw $exception;
         }
 
-        $this->resetRequestParams();
+        //$this->resetRequestParams();
         return $ret;
     }
 

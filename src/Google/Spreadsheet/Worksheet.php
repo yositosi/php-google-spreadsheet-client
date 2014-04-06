@@ -44,22 +44,10 @@ class Worksheet
      * 
      * @param string $xml
      */
-    public function __construct($xml)
+    public function __construct(SimpleXMLElement $xml)
     {
-        if(is_string($xml))
-            $this->xml = new SimpleXMLElement($xml);
-        else
-            $this->xml = $xml;
-    }
-
-    /**
-     * Get the worksheet xml
-     * 
-     * @return \SimpleXMLElement
-     */
-    public function getXml()
-    {
-        return $this->xml;
+        $xml->registerXPathNamespace('gs', 'http://schemas.google.com/spreadsheets/2006');
+        $this->xml = $xml;
     }
 
     /**
@@ -69,7 +57,7 @@ class Worksheet
      */
     public function getId()
     {
-        $id = $this->xml->id->__toString();
+        return $this->xml->id->__toString();
         return $id;
     }
 
@@ -88,7 +76,7 @@ class Worksheet
      * 
      * @return string
      *
-     * @throws \Google\Exception
+     * @throws \Google\Spreadsheet\Exception
      */
     public function getWorksheetId()
     {
@@ -108,6 +96,28 @@ class Worksheet
     public function getTitle()
     {
         return $this->xml->title->__toString();
+    }
+
+    /**
+     * Get the number of rows in the worksheet
+     * 
+     * @return int
+     */
+    public function getRowCount()
+    {
+        $el = current($this->xml->xpath('//gs:rowCount'));
+        return (int) $el->__toString();
+    }
+
+    /**
+     * Get the number of columns in the worksheet
+     * 
+     * @return int
+     */
+    public function getColCount()
+    {
+        $el = current($this->xml->xpath('//gs:colCount'));
+        return (int) $el->__toString();
     }
 
     /**
@@ -193,19 +203,6 @@ class Worksheet
             $serviceRequest->execute();
             $col++;
         }
-    }
-
-    /**
-     * Delete this worksheet
-     * 
-     * @return void
-     */
-    public function delete()
-    {
-        $serviceRequest = ServiceRequestFactory::getInstance();
-        $serviceRequest->getRequest()->setFullUrl($this->getEditUrl());
-        $serviceRequest->getRequest()->setMethod(Request::DELETE);
-        $serviceRequest->execute();
     }
 
     public function setPostUrl($url)
