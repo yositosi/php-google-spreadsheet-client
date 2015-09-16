@@ -112,13 +112,14 @@ class CellFeed
      */
     public function editCell($rowNum, $colNum, $value)
     {
+        $value = preg_replace('/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/','', $value);
         $entry = sprintf('
             <entry xmlns="http://www.w3.org/2005/Atom" xmlns:gs="http://schemas.google.com/spreadsheets/2006">
               <gs:cell row="%u" col="%u" inputValue="%s"/>
             </entry>',
             $rowNum,
             $colNum,
-            $value
+            htmlspecialchars($value, ENT_QUOTES, "UTF-8")
         );
 
         ServiceRequestFactory::getInstance()->post($this->getPostUrl(), $entry);

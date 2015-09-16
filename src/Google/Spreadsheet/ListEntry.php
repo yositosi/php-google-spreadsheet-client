@@ -74,11 +74,14 @@ class ListEntry
         $entry .= '<id>'.$this->xml->id->__toString().'</id>';
 
         foreach($values as $colName => $value) {
+            $colName = preg_replace('/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/','', $colName);
+            $value = preg_replace('/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/','', $value);
+ 
             $entry .= sprintf(
-                '<gsx:%s><![CDATA[%s]]></gsx:%s>',
-                $colName,
-                $value,
-                $colName
+                '<gsx:%s>%s</gsx:%s>',
+                htmlspecialchars($colName, ENT_QUOTES, "UTF-8"),
+                htmlspecialchars($value, ENT_QUOTES, "UTF-8"),
+                htmlspecialchars($colName, ENT_QUOTES, "UTF-8")
             );
         }
 

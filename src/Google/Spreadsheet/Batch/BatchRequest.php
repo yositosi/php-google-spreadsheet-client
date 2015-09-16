@@ -89,6 +89,7 @@ class BatchRequest
      */
     protected function createEntry(CellEntry $cellEntry, $index, CellFeed $cellFeed)
     {
+        $value = preg_replace('/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/','', $cellEntry->getContent());
         return sprintf(
             '<entry>
                 <batch:id>%s</batch:id>
@@ -103,7 +104,7 @@ class BatchRequest
             $cellEntry->getEditUrl(),
             $cellEntry->getRow(),
             $cellEntry->getColumn(),
-            $cellEntry->getContent()
+            htmlspecialchars($value, ENT_QUOTES, "UTF-8")
         );
     }
     

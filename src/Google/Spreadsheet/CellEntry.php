@@ -160,6 +160,8 @@ class CellEntry
      */
     public function update($value)
     {
+        $value = preg_replace('/[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]/','', $value);
+
         $entry = sprintf('
             <entry xmlns="http://www.w3.org/2005/Atom"
                 xmlns:gs="http://schemas.google.com/spreadsheets/2006">
@@ -167,7 +169,7 @@ class CellEntry
             </entry>',
             $this->row,
             $this->column,
-            $value
+            htmlspecialchars($value, ENT_QUOTES, "UTF-8") 
         );
 
         $res = ServiceRequestFactory::getInstance()->post($this->postUrl, $entry);
